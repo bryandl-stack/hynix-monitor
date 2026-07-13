@@ -1,36 +1,23 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# hynix-monitor
 
-## Getting Started
+SK하이닉스 가격을 4개 시장에서 모아 원화 기준으로 실시간 비교하는 대시보드.
 
-First, run the development server:
+- **KRX** 000660 · **NXT**(넥스트레이드) · **NASDAQ ADR** SKHY(×10) · **Binance 선물** SKHYUSDT(×10)
+- 환율: 하나은행 고시환율 (주말 동결 표시)
+- Binance는 WebSocket 틱 실시간, 나머지는 5초(장중)/30초(장외) 폴링
+- 30일 원화 환산 비교 차트 (NXT는 일봉 미제공으로 카드만)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 실행
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+    npm install
+    npm run dev        # http://localhost:3000
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 점검
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+    npm test           # 유닛 테스트
+    npm run probe      # 업스트림 API 5종 생존 확인
 
-## Learn More
+## 주의
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+비공식 공개 API(네이버·Yahoo)를 사용하므로 스키마가 바뀔 수 있다.
+깨지면 `npm run probe`로 어느 소스가 죽었는지 먼저 확인할 것.
