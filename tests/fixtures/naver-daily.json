@@ -1,0 +1,11 @@
+{
+  "isSuccess": true,
+  "result": {
+    "code": "000660",
+    "periodType": "dayCandle",
+    "priceInfos": [
+      { "localDate": "20260710", "closePrice": 2180000, "openPrice": 2150000, "highPrice": 2200000, "lowPrice": 2140000, "accumulatedTradingVolume": 5000000 },
+      { "localDate": "20260713", "closePrice": 1845000, "openPrice": 2113000, "highPrice": 2142000, "lowPrice": 1839000, "accumulatedTradingVolume": 7951404 }
+    ]
+  }
+}

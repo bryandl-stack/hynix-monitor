@@ -1,0 +1,27 @@
+{
+  "isSuccess": true,
+  "result": {
+    "pollingInterval": 7000,
+    "datas": [
+      {
+        "itemCode": "000660",
+        "stockName": "SK하이닉스",
+        "marketStatus": "CLOSE",
+        "localTradedAt": "2026-07-13T15:30:00+09:00",
+        "closePriceRaw": "1845000",
+        "compareToPreviousClosePriceRaw": "-335000",
+        "fluctuationsRatioRaw": "-15.37",
+        "accumulatedTradingVolumeRaw": "7951404",
+        "overMarketPriceInfo": {
+          "tradingSessionType": "AFTER_MARKET",
+          "overMarketStatus": "OPEN",
+          "overPrice": "1,828,000",
+          "compareToPreviousClosePrice": "-352,000",
+          "fluctuationsRatio": "-16.15",
+          "localTradedAt": "2026-07-13T19:35:12.458580+09:00",
+          "accumulatedTradingVolumeRaw": "6251008"
+        }
+      }
+    ]
+  }
+}
