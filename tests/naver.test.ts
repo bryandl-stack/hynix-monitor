@@ -30,8 +30,8 @@ describe('naver source', () => {
   });
 
   test('overMarketPriceInfo 없으면 nxt는 null', () => {
-    const j = structuredClone(quoteFixture) as Record<string, never>;
-    delete (j as { result: { datas: Record<string, unknown>[] } }).result.datas[0].overMarketPriceInfo;
+    const j = structuredClone(quoteFixture) as unknown as { result: { datas: Record<string, unknown>[] } };
+    delete j.result.datas[0].overMarketPriceInfo;
     expect(parseKoreanQuotes(j).nxt).toBeNull();
   });
 
