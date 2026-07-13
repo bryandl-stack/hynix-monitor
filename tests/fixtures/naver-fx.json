@@ -1,0 +1,8 @@
+{
+  "isSuccess": true,
+  "result": [
+    { "localTradedAt": "2026-07-13", "closePrice": "1,493.30" },
+    { "localTradedAt": "2026-07-10", "closePrice": "1,502.00" },
+    { "localTradedAt": "2026-07-09", "closePrice": "1,498.50" }
+  ]
+}
