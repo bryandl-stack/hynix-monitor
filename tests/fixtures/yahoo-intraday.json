@@ -1,0 +1,18 @@
+{
+  "chart": {
+    "result": [
+      {
+        "meta": {
+          "symbol": "SKHY",
+          "regularMarketPrice": 168.01,
+          "chartPreviousClose": 149.0,
+          "regularMarketTime": 1783713600,
+          "exchangeTimezoneName": "America/New_York"
+        },
+        "timestamp": [1783946100, 1783946160, 1783946220],
+        "indicators": { "quote": [{ "close": [154.1, null, 154.4] }] }
+      }
+    ],
+    "error": null
+  }
+}

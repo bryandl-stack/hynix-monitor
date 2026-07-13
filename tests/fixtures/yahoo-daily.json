@@ -1,0 +1,12 @@
+{
+  "chart": {
+    "result": [
+      {
+        "meta": { "symbol": "SKHY", "exchangeTimezoneName": "America/New_York" },
+        "timestamp": [1783690200, 1783946100],
+        "indicators": { "quote": [{ "close": [168.01, null] }] }
+      }
+    ],
+    "error": null
+  }
+}
