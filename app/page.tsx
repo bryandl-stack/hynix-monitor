@@ -3,8 +3,10 @@
 import { FxBar } from '@/components/fx-bar';
 import { QuoteCard } from '@/components/quote-card';
 import { ComparisonChart } from '@/components/comparison-chart';
+import { PremiumAlert } from '@/components/premium-alert';
 import { useBinanceWs } from '@/hooks/use-binance-ws';
 import { useHistory, useQuote, useFx } from '@/hooks/use-quotes';
+import { premiumPct, usdToKrwShare } from '@/lib/convert';
 
 export default function Home() {
   const krx = useQuote('krx');
@@ -23,6 +25,14 @@ export default function Home() {
   const krxKrw = krx.quote?.price ?? null;
   const fxRate = fx?.rate ?? null;
 
+  const krwOf = (usd: number | undefined) => usd !== undefined && fxRate !== null ? usdToKrwShare(usd, fxRate) : null;
+  const adrPremium = krxKrw !== null ? premiumPct(krwOf(adr.quote?.price) ?? NaN, krxKrw) : null;
+  const binancePremium = krxKrw !== null ? premiumPct(krwOf(binanceQuote?.price) ?? NaN, krxKrw) : null;
+  const premiums = [
+    { label: 'ADR', value: adrPremium !== null && Number.isFinite(adrPremium) ? adrPremium : null },
+    { label: 'Binance', value: binancePremium !== null && Number.isFinite(binancePremium) ? binancePremium : null },
+  ];
+
   return (
     <main className="mx-auto max-w-5xl px-4 py-8">
       <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
@@ -30,23 +40,26 @@ export default function Home() {
           <h1 className="text-xl font-bold text-zinc-50">SK하이닉스 멀티마켓 시세</h1>
           <p className="mt-1 text-sm text-zinc-500">KRX · NXT · NASDAQ ADR · Binance 선물 — 원화 환산 비교</p>
         </div>
-        <FxBar />
+        <div className="flex flex-col items-end gap-2">
+          <FxBar />
+          <PremiumAlert premiums={premiums} />
+        </div>
       </header>
 
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <QuoteCard title="KRX" subtitle="000660" quote={krx.quote} stale={krx.stale} error={krx.error}
-          fxRate={fxRate} krxKrw={krxKrw} showPremium={false} />
+          fxRate={fxRate} krxKrw={krxKrw} showPremium={false} fetchedAt={krx.fetchedAt} />
         <QuoteCard title="NXT" subtitle="넥스트레이드" quote={nxt.quote} stale={nxt.stale} error={nxt.error}
-          fxRate={fxRate} krxKrw={krxKrw} showPremium={true} />
+          fxRate={fxRate} krxKrw={krxKrw} showPremium={true} fetchedAt={nxt.fetchedAt} />
         <QuoteCard title="ADR 환산" subtitle="NASDAQ SKHY ×10" quote={adr.quote} stale={adr.stale} error={adr.error}
-          fxRate={fxRate} krxKrw={krxKrw} showPremium={true} />
+          fxRate={fxRate} krxKrw={krxKrw} showPremium={true} fetchedAt={adr.fetchedAt} />
         <QuoteCard title="Binance 환산" subtitle={`SKHYUSDT 선물 ×10${ws.connected ? ' · LIVE' : ''}`}
           quote={binanceQuote} stale={binance.stale} error={binance.error}
-          fxRate={fxRate} krxKrw={krxKrw} showPremium={true} />
+          fxRate={fxRate} krxKrw={krxKrw} showPremium={true} fetchedAt={binance.fetchedAt} />
       </section>
 
       <section className="mt-8">
-        <h2 className="mb-3 text-sm font-semibold text-zinc-300">최근 30일 원화 환산 비교</h2>
+        <h2 className="mb-3 text-sm font-semibold text-zinc-300">최근 원화 환산 비교 · KRX 대비 괴리율</h2>
         <ComparisonChart history={history} />
         <p className="mt-2 text-xs text-zinc-600">
           NXT는 일봉 데이터가 제공되지 않아 차트에서 제외됩니다. ADR·Binance는 2026-07-10 상장 이후 데이터만 표시됩니다.

@@ -1,11 +1,16 @@
 'use client';
 
 import { premiumPct, usdToKrwShare } from '@/lib/convert';
-import { fmtKrw, fmtPct, fmtTime, fmtUsd } from '@/lib/format';
-import { sessionAt, sessionLabel, type MarketId } from '@/lib/market-hours';
-import type { Quote, SourceId } from '@/lib/types';
+import { fmtKrw, fmtPct, fmtTime, fmtUsd, fmtVolume } from '@/lib/format';
+import { sessionAt, sessionLabel, MARKET_OF } from '@/lib/market-hours';
+import type { Quote } from '@/lib/types';
 
-const MARKET_OF: Record<SourceId, MarketId> = { krx: 'krx', nxt: 'nxt', adr: 'us', binance: 'binance' };
+/** 등락/괴리율 부호를 색상만이 아니라 화살표로도 표시(색맹 접근성) */
+function ChangeArrow({ value }: { value: number }) {
+  if (value > 0) return <span aria-hidden>▲</span>;
+  if (value < 0) return <span aria-hidden>▼</span>;
+  return null;
+}
 
 interface Props {
   title: string;
@@ -16,9 +21,10 @@ interface Props {
   fxRate: number | null;
   krxKrw: number | null;     // 괴리율 기준 (KRX 카드에는 자기 자신 → 괴리율 미표시)
   showPremium: boolean;
+  fetchedAt: number | null;
 }
 
-export function QuoteCard({ title, subtitle, quote, stale, error, fxRate, krxKrw, showPremium }: Props) {
+export function QuoteCard({ title, subtitle, quote, stale, error, fxRate, krxKrw, showPremium, fetchedAt }: Props) {
   if (!quote) {
     return (
       <div className="rounded-lg border border-zinc-800 bg-[#151a24] p-5">
@@ -54,17 +60,29 @@ export function QuoteCard({ title, subtitle, quote, stale, error, fxRate, krxKrw
       </div>
 
       <div className="mt-1 flex items-center gap-3 text-sm tabular-nums">
-        <span className={changeColor}>{fmtPct(quote.changePct)}</span>
+        <span className={`flex items-center gap-0.5 ${changeColor}`}>
+          <ChangeArrow value={quote.changePct} />
+          {fmtPct(quote.changePct)}
+        </span>
         {quote.currency === 'USD' && <span className="text-zinc-400">{fmtUsd(quote.price)}</span>}
         {premium !== null && (
           <span className="text-zinc-400">
-            KRX 대비 <span className={premium >= 0 ? 'text-[#f04452]' : 'text-[#3182f6]'}>{fmtPct(premium)}</span>
+            KRX 대비{' '}
+            <span className={`inline-flex items-center gap-0.5 ${premium >= 0 ? 'text-[#f04452]' : 'text-[#3182f6]'}`}>
+              <ChangeArrow value={premium} />
+              {fmtPct(premium)}
+            </span>
           </span>
         )}
       </div>
 
+      {quote.volume !== undefined && (
+        <div className="mt-1 text-xs text-zinc-500">거래량 {fmtVolume(quote.volume)}</div>
+      )}
+
       <div className="mt-3 flex items-center gap-2 text-xs text-zinc-500">
         <span>{fmtTime(quote.tradedAt)} 기준</span>
+        {fetchedAt !== null && <span>· {fmtTime(new Date(fetchedAt).toISOString())} 갱신</span>}
         {stale && <span className="text-amber-400">지연됨</span>}
       </div>
     </div>

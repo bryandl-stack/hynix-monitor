@@ -1,5 +1,6 @@
 import type { DailyPoint } from '@/lib/types';
-import { NAVER_HEADERS, num } from '@/lib/sources/naver';
+import { num } from '@/lib/sources/naver';
+import { BROWSER_HEADERS, fetchJson } from '@/lib/sources/http';
 
 const FX_URL =
   'https://m.stock.naver.com/front-api/marketIndex/prices?category=exchange&reutersCode=FX_USDKRW&page=1';
@@ -21,7 +22,6 @@ export function parseFx(json: unknown): { current: FxRate; daily: DailyPoint[] }
 }
 
 export async function fetchFx(): Promise<{ current: FxRate; daily: DailyPoint[] }> {
-  const res = await fetch(FX_URL, { headers: NAVER_HEADERS, cache: 'no-store' });
-  if (!res.ok) throw new Error(`naver fx HTTP ${res.status}`);
-  return parseFx(await res.json());
+  const json = await fetchJson(FX_URL, { headers: BROWSER_HEADERS, label: 'naver fx' });
+  return parseFx(json);
 }

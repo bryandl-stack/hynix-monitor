@@ -1,6 +1,9 @@
-import type { SessionState } from '@/lib/types';
+import type { SessionState, SourceId } from '@/lib/types';
 
 export type MarketId = 'krx' | 'nxt' | 'us' | 'binance';
+
+/** SourceId(krx/nxt/adr/binance) → 개장시간 판단에 쓰는 MarketId */
+export const MARKET_OF: Record<SourceId, MarketId> = { krx: 'krx', nxt: 'nxt', adr: 'us', binance: 'binance' };
 
 /** 해당 타임존의 요일(0=일)과 자정 이후 경과 분을 구한다 */
 function localParts(tz: string, now: Date): { weekday: number; minutes: number } {

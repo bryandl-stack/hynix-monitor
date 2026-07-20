@@ -1,5 +1,6 @@
 const krw = new Intl.NumberFormat('ko-KR', { maximumFractionDigits: 0 });
 const usd = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const volume = new Intl.NumberFormat('ko-KR', { maximumFractionDigits: 0 });
 
 export function fmtKrw(n: number): string {
   return `${krw.format(Math.round(n))}원`;
@@ -12,6 +13,10 @@ export function fmtUsd(n: number): string {
 export function fmtPct(n: number): string {
   const s = n.toFixed(2);
   return n > 0 ? `+${s}%` : `${s}%`;
+}
+
+export function fmtVolume(n: number): string {
+  return volume.format(Math.round(n));
 }
 
 export function fmtTime(iso: string): string {

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { BINANCE_WS_URL } from '@/lib/sources/binance';
+import { nextBackoffMs } from '@/lib/backoff';
 
 /** Binance aggTrade 구독. 1초 스로틀 렌더, 지수 백오프 재연결 */
 export function useBinanceWs() {
@@ -35,7 +36,7 @@ export function useBinanceWs() {
         setConnected(false);
         if (!closed) {
           retryTimer = setTimeout(connect, retryMs);
-          retryMs = Math.min(retryMs * 2, 30_000);
+          retryMs = nextBackoffMs(retryMs);
         }
       };
       ws.onerror = () => ws?.close();

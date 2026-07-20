@@ -1,11 +1,13 @@
 import type { DailyPoint } from '@/lib/types';
-import { usdToKrwShare } from '@/lib/convert';
+import { premiumPct, usdToKrwShare } from '@/lib/convert';
 
 export interface HistoryPoint {
   date: string;
   krxKrw: number | null;
   adrKrw: number | null;
   binanceKrw: number | null;
+  adrPremiumPct: number | null;
+  binancePremiumPct: number | null;
 }
 
 /** date 이하에서 가장 가까운 환율. 없으면 null */
@@ -26,7 +28,7 @@ export function mergeHistory(
   days = 30,
 ): HistoryPoint[] {
   const fx = [...fxDaily].sort((a, b) => a.date.localeCompare(b.date));
-  const byDate = <T,>(arr: DailyPoint[]) => new Map(arr.map((p) => [p.date, p.close]));
+  const byDate = (arr: DailyPoint[]) => new Map(arr.map((p) => [p.date, p.close]));
   const krxMap = byDate(krx);
   const adrMap = byDate(adr);
   const bnMap = byDate(binance);
@@ -39,10 +41,17 @@ export function mergeHistory(
     return rate === null ? null : usdToKrwShare(usd, rate);
   };
 
-  return dates.slice(-days).map((date) => ({
-    date,
-    krxKrw: krxMap.get(date) ?? null,
-    adrKrw: toKrw(adrMap.get(date), date),
-    binanceKrw: toKrw(bnMap.get(date), date),
-  }));
+  return dates.slice(-days).map((date) => {
+    const krxKrw = krxMap.get(date) ?? null;
+    const adrKrw = toKrw(adrMap.get(date), date);
+    const binanceKrw = toKrw(bnMap.get(date), date);
+    return {
+      date,
+      krxKrw,
+      adrKrw,
+      binanceKrw,
+      adrPremiumPct: krxKrw !== null && adrKrw !== null ? premiumPct(adrKrw, krxKrw) : null,
+      binancePremiumPct: krxKrw !== null && binanceKrw !== null ? premiumPct(binanceKrw, krxKrw) : null,
+    };
+  });
 }

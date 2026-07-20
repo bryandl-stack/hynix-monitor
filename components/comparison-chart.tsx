@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   createChart,
   LineSeries,
+  LineStyle,
   CrosshairMode,
   type IChartApi,
   type ISeriesApi,
@@ -14,17 +15,44 @@ import {
 } from 'lightweight-charts';
 import type { HistoryPoint } from '@/lib/history';
 
-const SERIES = [
-  { key: 'krxKrw', label: 'KRX', color: '#e8eaed' },
-  { key: 'adrKrw', label: 'ADR 환산', color: '#f0a44b' },
-  { key: 'binanceKrw', label: 'Binance 환산', color: '#7c6cf0' },
-] as const;
+type SeriesKey = 'krxKrw' | 'adrKrw' | 'binanceKrw' | 'adrPremiumPct' | 'binancePremiumPct';
 
 function formatWon(v: number): string {
   return `${Math.round(v / 10000).toLocaleString('ko-KR')}만`;
 }
 
-function toLine(history: HistoryPoint[], key: (typeof SERIES)[number]['key']): LineData[] {
+function formatPct(v: number): string {
+  return `${v > 0 ? '+' : ''}${v.toFixed(2)}%`;
+}
+
+interface SeriesConfig {
+  key: SeriesKey;
+  label: string;
+  color: string;
+  pane: number;
+  format: (v: number) => string;
+}
+
+const PRICE_SERIES: SeriesConfig[] = [
+  { key: 'krxKrw', label: 'KRX', color: '#e8eaed', pane: 0, format: formatWon },
+  { key: 'adrKrw', label: 'ADR 환산', color: '#f0a44b', pane: 0, format: formatWon },
+  { key: 'binanceKrw', label: 'Binance 환산', color: '#7c6cf0', pane: 0, format: formatWon },
+];
+
+const PREMIUM_SERIES: SeriesConfig[] = [
+  { key: 'adrPremiumPct', label: 'ADR 괴리율', color: '#f0a44b', pane: 1, format: formatPct },
+  { key: 'binancePremiumPct', label: 'Binance 괴리율', color: '#7c6cf0', pane: 1, format: formatPct },
+];
+
+const ALL_SERIES = [...PRICE_SERIES, ...PREMIUM_SERIES];
+
+const PERIODS = [
+  { key: '7', label: '7D', days: 7 },
+  { key: '30', label: '30D', days: 30 },
+  { key: '90', label: '90D', days: 90 },
+] as const;
+
+function toLine(history: HistoryPoint[], key: SeriesKey): LineData[] {
   return history
     .filter((p) => p[key] !== null)
     .map((p) => ({
@@ -37,14 +65,23 @@ export function ComparisonChart({ history }: { history: HistoryPoint[] | null })
   const ref = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
+  const seriesApisRef = useRef<(SeriesConfig & { api: ISeriesApi<'Line'> })[]>([]);
+  const [period, setPeriod] = useState<(typeof PERIODS)[number]['key']>('30');
 
+  const visibleHistory = useMemo(() => {
+    if (!history) return null;
+    const days = PERIODS.find((p) => p.key === period)!.days;
+    return history.slice(-days);
+  }, [history, period]);
+
+  // 차트/시리즈는 마운트 시 한 번만 생성 (history 폴링마다 재생성하지 않는다)
   useEffect(() => {
-    if (!ref.current || !history) return;
+    if (!ref.current) return;
     const container = ref.current;
     const tooltip = tooltipRef.current;
 
     const chart = createChart(container, {
-      height: 320,
+      height: 420,
       layout: { background: { color: 'transparent' }, textColor: '#8b93a7' },
       grid: {
         vertLines: { color: 'rgba(139,147,167,0.08)' },
@@ -57,26 +94,38 @@ export function ComparisonChart({ history }: { history: HistoryPoint[] | null })
       },
       rightPriceScale: { borderVisible: false },
       timeScale: { borderVisible: false },
-      localization: {
-        priceFormatter: (v: number) => formatWon(v),
-      },
       autoSize: true,
     });
     chartRef.current = chart;
 
-    const seriesApis: { key: (typeof SERIES)[number]['key']; label: string; color: string; api: ISeriesApi<'Line'> }[] = [];
-    for (const s of SERIES) {
-      const series = chart.addSeries(LineSeries, {
-        color: s.color,
-        lineWidth: 2,
-        title: s.label,
-        priceLineVisible: false,
-        lastValueVisible: true,
-      });
-      series.setData(toLine(history, s.key));
+    const seriesApis: (SeriesConfig & { api: ISeriesApi<'Line'> })[] = [];
+    for (const s of ALL_SERIES) {
+      const series = chart.addSeries(
+        LineSeries,
+        {
+          color: s.color,
+          lineWidth: 2,
+          title: s.label,
+          priceLineVisible: false,
+          lastValueVisible: true,
+          priceFormat: { type: 'custom', minMove: 0.01, formatter: s.format },
+        },
+        s.pane,
+      );
+      if (s.key === 'adrPremiumPct') {
+        series.createPriceLine({
+          price: 0,
+          color: 'rgba(139,147,167,0.3)',
+          lineWidth: 1,
+          lineStyle: LineStyle.Dashed,
+          axisLabelVisible: false,
+          title: '',
+        });
+      }
       seriesApis.push({ ...s, api: series });
     }
-    chart.timeScale().fitContent();
+    seriesApisRef.current = seriesApis;
+    chart.panes()[1]?.setHeight(140);
 
     // Custom tooltip: one readout listing every series at the hovered X (dataviz: "one
     // tooltip, every series" — the pointer doesn't have to land on a specific line).
@@ -87,13 +136,13 @@ export function ComparisonChart({ history }: { history: HistoryPoint[] | null })
         return;
       }
 
-      const rows = seriesApis
-        .map(({ label, color, api }) => {
+      const rows = seriesApisRef.current
+        .map(({ label, color, format, api }) => {
           const point = param.seriesData.get(api) as LineData | undefined;
           if (!point || typeof point.value !== 'number') return null;
-          return { label, color, value: point.value };
+          return { label, color, value: point.value, format };
         })
-        .filter((r): r is { label: string; color: string; value: number } => r !== null);
+        .filter((r): r is { label: string; color: string; value: number; format: (v: number) => string } => r !== null);
 
       if (rows.length === 0) {
         tooltip.style.opacity = '0';
@@ -117,7 +166,7 @@ export function ComparisonChart({ history }: { history: HistoryPoint[] | null })
 
         const value = document.createElement('span');
         value.className = 'font-medium text-zinc-100 tabular-nums';
-        value.textContent = formatWon(row.value);
+        value.textContent = row.format(row.value);
         line.appendChild(value);
 
         const name = document.createElement('span');
@@ -146,29 +195,60 @@ export function ComparisonChart({ history }: { history: HistoryPoint[] | null })
       chart.unsubscribeCrosshairMove(handleCrosshairMove);
       chart.remove();
       chartRef.current = null;
+      seriesApisRef.current = [];
     };
-  }, [history]);
+  }, []);
 
-  if (!history) {
-    return (
-      <div className="flex h-80 items-center justify-center rounded-lg border border-zinc-800 bg-[#151a24] text-zinc-600">
-        로딩 중…
-      </div>
-    );
-  }
+  // history/기간이 바뀔 때는 기존 시리즈의 데이터만 갱신 (차트 재생성 없음)
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart || !visibleHistory) return;
+    for (const s of seriesApisRef.current) {
+      s.api.setData(toLine(visibleHistory, s.key));
+    }
+    chart.timeScale().fitContent();
+  }, [visibleHistory]);
 
   return (
     <div className="rounded-lg border border-zinc-800 bg-[#151a24] p-3">
-      <div className="mb-2 flex gap-4 text-xs">
-        {SERIES.map((s) => (
-          <span key={s.key} className="flex items-center gap-1.5 text-zinc-400">
-            <span className="inline-block h-0.5 w-4" style={{ backgroundColor: s.color }} />
-            {s.label}
-          </span>
-        ))}
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
+          {PRICE_SERIES.map((s) => (
+            <span key={s.key} className="flex items-center gap-1.5 text-zinc-400">
+              <span className="inline-block h-0.5 w-4" style={{ backgroundColor: s.color }} />
+              {s.label}
+            </span>
+          ))}
+          <span className="text-zinc-700">|</span>
+          {PREMIUM_SERIES.map((s) => (
+            <span key={s.key} className="flex items-center gap-1.5 text-zinc-400">
+              <span className="inline-block h-0.5 w-4 border-t border-dashed" style={{ backgroundColor: s.color }} />
+              {s.label}
+            </span>
+          ))}
+        </div>
+        <div className="flex gap-1">
+          {PERIODS.map((p) => (
+            <button
+              key={p.key}
+              type="button"
+              onClick={() => setPeriod(p.key)}
+              className={`rounded px-2 py-0.5 text-xs ${
+                period === p.key ? 'bg-zinc-700 text-zinc-100' : 'text-zinc-500 hover:text-zinc-300'
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
       </div>
       <div className="relative">
-        <div ref={ref} className="h-80 w-full" />
+        <div ref={ref} className="h-[420px] w-full" />
+        {!history && (
+          <div className="absolute inset-0 flex items-center justify-center bg-[#151a24] text-zinc-600">
+            로딩 중…
+          </div>
+        )}
         <div
           ref={tooltipRef}
           className="pointer-events-none absolute z-10 rounded-md border border-zinc-700 bg-[#1c2230] px-2.5 py-2 opacity-0 shadow-lg transition-opacity duration-75"

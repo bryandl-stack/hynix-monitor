@@ -1,10 +1,10 @@
 import type { DailyPoint, Quote } from '@/lib/types';
 import { changePctOf } from '@/lib/convert';
+import { BROWSER_HEADERS, fetchJson } from '@/lib/sources/http';
 
 const BASE = 'https://query1.finance.yahoo.com/v8/finance/chart/SKHY';
 const INTRADAY_URL = `${BASE}?interval=1m&range=1d&includePrePost=true`;
 const DAILY_URL = `${BASE}?interval=1d&range=3mo`;
-const HEADERS = { 'User-Agent': 'Mozilla/5.0' };
 
 interface YahooChart {
   chart: {
@@ -48,9 +48,8 @@ export function parseAdrQuote(json: unknown): Quote {
 }
 
 export async function fetchAdrQuote(): Promise<Quote> {
-  const res = await fetch(INTRADAY_URL, { headers: HEADERS, cache: 'no-store' });
-  if (!res.ok) throw new Error(`yahoo intraday HTTP ${res.status}`);
-  return parseAdrQuote(await res.json());
+  const json = await fetchJson(INTRADAY_URL, { headers: BROWSER_HEADERS, label: 'yahoo intraday' });
+  return parseAdrQuote(json);
 }
 
 export function parseAdrDaily(json: unknown): DailyPoint[] {
@@ -68,7 +67,6 @@ export function parseAdrDaily(json: unknown): DailyPoint[] {
 }
 
 export async function fetchAdrDaily(): Promise<DailyPoint[]> {
-  const res = await fetch(DAILY_URL, { headers: HEADERS, cache: 'no-store' });
-  if (!res.ok) throw new Error(`yahoo daily HTTP ${res.status}`);
-  return parseAdrDaily(await res.json());
+  const json = await fetchJson(DAILY_URL, { headers: BROWSER_HEADERS, label: 'yahoo daily' });
+  return parseAdrDaily(json);
 }

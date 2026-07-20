@@ -9,7 +9,6 @@ export interface Quote {
   changePct: number;        // 전일 대비 %
   tradedAt: string;         // ISO 8601
   volume?: number;
-  stale?: boolean;
 }
 
 export interface DailyPoint {

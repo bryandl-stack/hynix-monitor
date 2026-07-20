@@ -16,13 +16,10 @@ export async function GET(
   const { source } = await params;
   try {
     switch (source) {
-      case 'krx': {
+      // krx/nxt는 같은 업스트림 응답에서 나오므로 한 번에 내려준다 (클라이언트 왕복 절반으로 축소)
+      case 'korean': {
         const r = await cached('korean', TTL.korean, fetchKoreanQuotes);
-        return NextResponse.json({ data: r.data.krx, stale: r.stale, fetchedAt: r.fetchedAt });
-      }
-      case 'nxt': {
-        const r = await cached('korean', TTL.korean, fetchKoreanQuotes);
-        return NextResponse.json({ data: r.data.nxt, stale: r.stale, fetchedAt: r.fetchedAt });
+        return NextResponse.json({ data: r.data, stale: r.stale, fetchedAt: r.fetchedAt });
       }
       case 'adr': {
         const r = await cached('adr', TTL.adr, fetchAdrQuote);
@@ -40,6 +37,7 @@ export async function GET(
         return NextResponse.json({ error: `unknown source: ${source}` }, { status: 404 });
     }
   } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 503 });
+    console.error(`[api/quote/${source}] upstream fetch failed:`, err);
+    return NextResponse.json({ error: 'quote unavailable' }, { status: 503 });
   }
 }

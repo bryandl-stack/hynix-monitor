@@ -1,11 +1,10 @@
 import type { DailyPoint, Quote } from '@/lib/types';
+import { BROWSER_HEADERS, fetchJson } from '@/lib/sources/http';
 
 const QUOTE_URL =
   'https://m.stock.naver.com/front-api/realTime/marketPrice?itemCodes=000660&endType=stock&stockType=domestic';
 const DAILY_URL =
   'https://m.stock.naver.com/front-api/chart/domestic/stock/end?code=000660&chartInfoType=item&scriptChartType=candleDay';
-
-export const NAVER_HEADERS = { 'User-Agent': 'Mozilla/5.0' };
 
 /** "1,845,000" | "-352,000" | 1845000 → number */
 export function num(s: unknown): number {
@@ -61,9 +60,8 @@ export function parseKoreanQuotes(json: unknown): { krx: Quote; nxt: Quote | nul
 }
 
 export async function fetchKoreanQuotes(): Promise<{ krx: Quote; nxt: Quote | null }> {
-  const res = await fetch(QUOTE_URL, { headers: NAVER_HEADERS, cache: 'no-store' });
-  if (!res.ok) throw new Error(`naver quote HTTP ${res.status}`);
-  return parseKoreanQuotes(await res.json());
+  const json = await fetchJson(QUOTE_URL, { headers: BROWSER_HEADERS, label: 'naver quote' });
+  return parseKoreanQuotes(json);
 }
 
 interface NaverDailyInfo { localDate: string; closePrice: number }
@@ -77,7 +75,6 @@ export function parseKrxDaily(json: unknown): DailyPoint[] {
 }
 
 export async function fetchKrxDaily(): Promise<DailyPoint[]> {
-  const res = await fetch(DAILY_URL, { headers: NAVER_HEADERS, cache: 'no-store' });
-  if (!res.ok) throw new Error(`naver daily HTTP ${res.status}`);
-  return parseKrxDaily(await res.json());
+  const json = await fetchJson(DAILY_URL, { headers: BROWSER_HEADERS, label: 'naver daily' });
+  return parseKrxDaily(json);
 }

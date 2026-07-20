@@ -21,11 +21,16 @@ describe('mergeHistory', () => {
     expect(d10.krxKrw).toBe(2180000);
     expect(d10.adrKrw).toBeCloseTo(168.01 * 10 * 1502.0, 4);
     expect(d10.binanceKrw).toBeCloseTo(170.66 * 10 * 1502.0, 4);
+    expect(d10.adrPremiumPct).toBeCloseTo((d10.adrKrw! / d10.krxKrw! - 1) * 100, 6);
+    expect(d10.binancePremiumPct).toBeCloseTo((d10.binanceKrw! / d10.krxKrw! - 1) * 100, 6);
 
     const d11 = out[1]; // 토요일: 금요일(07-10) 환율로 환산
     expect(d11.krxKrw).toBeNull();
     expect(d11.adrKrw).toBeNull();
     expect(d11.binanceKrw).toBeCloseTo(169.0 * 10 * 1502.0, 4);
+    // krxKrw가 없는 날은 괴리율도 계산 불가 → null
+    expect(d11.adrPremiumPct).toBeNull();
+    expect(d11.binancePremiumPct).toBeNull();
   });
 
   test('환율 이전 데이터가 없으면 환산값 null', () => {
