@@ -25,12 +25,11 @@ export default function Home() {
   const krxKrw = krx.quote?.price ?? null;
   const fxRate = fx?.rate ?? null;
 
-  const krwOf = (usd: number | undefined) => usd !== undefined && fxRate !== null ? usdToKrwShare(usd, fxRate) : null;
-  const adrPremium = krxKrw !== null ? premiumPct(krwOf(adr.quote?.price) ?? NaN, krxKrw) : null;
-  const binancePremium = krxKrw !== null ? premiumPct(krwOf(binanceQuote?.price) ?? NaN, krxKrw) : null;
+  const premiumOf = (usd: number | undefined) =>
+    usd !== undefined && fxRate !== null && krxKrw ? premiumPct(usdToKrwShare(usd, fxRate), krxKrw) : null;
   const premiums = [
-    { label: 'ADR', value: adrPremium !== null && Number.isFinite(adrPremium) ? adrPremium : null },
-    { label: 'Binance', value: binancePremium !== null && Number.isFinite(binancePremium) ? binancePremium : null },
+    { label: 'ADR', value: premiumOf(adr.quote?.price) },
+    { label: 'Binance', value: premiumOf(binanceQuote?.price) },
   ];
 
   return (
@@ -59,10 +58,14 @@ export default function Home() {
       </section>
 
       <section className="mt-8">
-        <h2 className="mb-3 text-sm font-semibold text-zinc-300">최근 원화 환산 비교 · KRX 대비 괴리율</h2>
+        <h2 className="mb-3 text-sm font-semibold text-zinc-300">
+          최근 원화 환산 비교 · 괴리율 (TSMC ADR 괴리율 동시 표시)
+        </h2>
         <ComparisonChart history={history} />
         <p className="mt-2 text-xs text-zinc-600">
           NXT는 일봉 데이터가 제공되지 않아 차트에서 제외됩니다. ADR·Binance는 2026-07-10 상장 이후 데이터만 표시됩니다.
+          TSMC 괴리율은 TSM ADR(1주=본주 5주, USD/TWD 환산)과 대만 본주 2330.TW의 같은 날짜 종가를 비교한 값으로,
+          ADR 괴리율이 통상 어느 정도 수준인지 가늠하는 벤치마크입니다.
         </p>
       </section>
     </main>

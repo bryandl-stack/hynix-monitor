@@ -15,7 +15,13 @@ import {
 } from 'lightweight-charts';
 import type { HistoryPoint } from '@/lib/history';
 
-type SeriesKey = 'krxKrw' | 'adrKrw' | 'binanceKrw' | 'adrPremiumPct' | 'binancePremiumPct';
+type SeriesKey =
+  | 'krxKrw'
+  | 'adrKrw'
+  | 'binanceKrw'
+  | 'adrPremiumPct'
+  | 'binancePremiumPct'
+  | 'tsmcPremiumPct';
 
 function formatWon(v: number): string {
   return `${Math.round(v / 10000).toLocaleString('ko-KR')}만`;
@@ -23,6 +29,11 @@ function formatWon(v: number): string {
 
 function formatPct(v: number): string {
   return `${v > 0 ? '+' : ''}${v.toFixed(2)}%`;
+}
+
+/** lightweight-charts는 우리가 넣은 UTCTimestamp를 그대로 돌려준다 → 날짜 문자열로 되돌린다 */
+function formatChartDate(t: Time): string {
+  return typeof t === 'number' ? new Date(t * 1000).toISOString().slice(0, 10) : String(t);
 }
 
 interface SeriesConfig {
@@ -39,9 +50,11 @@ const PRICE_SERIES: SeriesConfig[] = [
   { key: 'binanceKrw', label: 'Binance 환산', color: '#7c6cf0', pane: 0, format: formatWon },
 ];
 
+// 하단 패널: 모두 "본국 정규시장 대비 %"라 서로 다른 종목이어도 같은 축에서 비교된다.
 const PREMIUM_SERIES: SeriesConfig[] = [
-  { key: 'adrPremiumPct', label: 'ADR 괴리율', color: '#f0a44b', pane: 1, format: formatPct },
-  { key: 'binancePremiumPct', label: 'Binance 괴리율', color: '#7c6cf0', pane: 1, format: formatPct },
+  { key: 'adrPremiumPct', label: 'ADR (vs KRX)', color: '#f0a44b', pane: 1, format: formatPct },
+  { key: 'binancePremiumPct', label: 'Binance (vs KRX)', color: '#7c6cf0', pane: 1, format: formatPct },
+  { key: 'tsmcPremiumPct', label: 'TSMC ADR (vs 대만 본주)', color: '#4bbf8f', pane: 1, format: formatPct },
 ];
 
 const ALL_SERIES = [...PRICE_SERIES, ...PREMIUM_SERIES];
@@ -125,7 +138,7 @@ export function ComparisonChart({ history }: { history: HistoryPoint[] | null })
       seriesApis.push({ ...s, api: series });
     }
     seriesApisRef.current = seriesApis;
-    chart.panes()[1]?.setHeight(140);
+    chart.panes()[1]?.setHeight(160);
 
     // Custom tooltip: one readout listing every series at the hovered X (dataviz: "one
     // tooltip, every series" — the pointer doesn't have to land on a specific line).
@@ -152,7 +165,7 @@ export function ComparisonChart({ history }: { history: HistoryPoint[] | null })
       tooltip.replaceChildren();
       const dateLabel = document.createElement('div');
       dateLabel.className = 'mb-1 text-[10px] text-zinc-500';
-      dateLabel.textContent = String(param.time);
+      dateLabel.textContent = formatChartDate(param.time);
       tooltip.appendChild(dateLabel);
 
       for (const row of rows) {
@@ -213,6 +226,7 @@ export function ComparisonChart({ history }: { history: HistoryPoint[] | null })
     <div className="rounded-lg border border-zinc-800 bg-[#151a24] p-3">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
+          <span className="text-zinc-600">원화 환산</span>
           {PRICE_SERIES.map((s) => (
             <span key={s.key} className="flex items-center gap-1.5 text-zinc-400">
               <span className="inline-block h-0.5 w-4" style={{ backgroundColor: s.color }} />
@@ -220,9 +234,10 @@ export function ComparisonChart({ history }: { history: HistoryPoint[] | null })
             </span>
           ))}
           <span className="text-zinc-700">|</span>
+          <span className="text-zinc-600">괴리율</span>
           {PREMIUM_SERIES.map((s) => (
             <span key={s.key} className="flex items-center gap-1.5 text-zinc-400">
-              <span className="inline-block h-0.5 w-4 border-t border-dashed" style={{ backgroundColor: s.color }} />
+              <span className="inline-block h-0.5 w-4" style={{ backgroundColor: s.color }} />
               {s.label}
             </span>
           ))}

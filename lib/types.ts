@@ -9,6 +9,10 @@ export interface Quote {
   changePct: number;        // 전일 대비 %
   tradedAt: string;         // ISO 8601
   volume?: number;
+  // 아래 3개는 미국 시외(프리/애프터) 체결이 최신일 때만 채워진다. 이때 price는 시외가다.
+  regularPrice?: number;
+  regularChangePct?: number;
+  regularTradedAt?: string;
 }
 
 export interface DailyPoint {

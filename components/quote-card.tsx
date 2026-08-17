@@ -42,6 +42,13 @@ export function QuoteCard({ title, subtitle, quote, stale, error, fxRate, krxKrw
   const changeColor = up ? 'text-[#f04452]' : quote.changePct < 0 ? 'text-[#3182f6]' : 'text-zinc-400';
   const session = sessionAt(MARKET_OF[quote.source], new Date());
   const premium = showPremium && krwPrice !== null && krxKrw ? premiumPct(krwPrice, krxKrw) : null;
+  // regularPrice가 있으면 위에 표시 중인 price는 정규장 밖(프리/애프터) 체결가다.
+  const tradeSession = quote.regularPrice !== undefined
+    ? sessionAt(MARKET_OF[quote.source], new Date(quote.tradedAt))
+    : null;
+  const extendedLabel = tradeSession === 'pre' ? '프리마켓'
+    : tradeSession === 'after' ? '애프터마켓'
+    : tradeSession ? '시외' : null;
 
   return (
     <div className="rounded-lg border border-zinc-800 bg-[#151a24] p-5">
@@ -50,13 +57,20 @@ export function QuoteCard({ title, subtitle, quote, stale, error, fxRate, krxKrw
           <span className="text-sm font-semibold text-zinc-100">{title}</span>
           <span className="ml-2 text-xs text-zinc-500">{subtitle}</span>
         </div>
-        <span className="rounded bg-zinc-800 px-1.5 py-0.5 text-xs text-zinc-300">
+        <span className="whitespace-nowrap rounded bg-zinc-800 px-1.5 py-0.5 text-xs text-zinc-300">
           {sessionLabel(MARKET_OF[quote.source], session)}
         </span>
       </div>
 
-      <div className="mt-3 text-3xl font-bold tabular-nums text-zinc-50">
-        {krwPrice !== null ? fmtKrw(krwPrice) : '—'}
+      <div className="mt-3 flex flex-wrap items-baseline gap-x-2">
+        <span className="whitespace-nowrap text-3xl font-bold tabular-nums text-zinc-50">
+          {krwPrice !== null ? fmtKrw(krwPrice) : '—'}
+        </span>
+        {extendedLabel && (
+          <span className="whitespace-nowrap rounded bg-amber-950 px-1.5 py-0.5 text-[10px] font-medium text-amber-300">
+            {extendedLabel} 체결가
+          </span>
+        )}
       </div>
 
       <div className="mt-1 flex items-center gap-3 text-sm tabular-nums">
@@ -75,6 +89,14 @@ export function QuoteCard({ title, subtitle, quote, stale, error, fxRate, krxKrw
           </span>
         )}
       </div>
+
+      {quote.regularPrice !== undefined && (
+        <div className="mt-1 text-xs tabular-nums text-zinc-500">
+          정규장 종가 {fmtUsd(quote.regularPrice)}
+          {quote.regularChangePct !== undefined && ` (${fmtPct(quote.regularChangePct)})`}
+          {fxRate !== null && ` · ${fmtKrw(usdToKrwShare(quote.regularPrice, fxRate))}`}
+        </div>
+      )}
 
       {quote.volume !== undefined && (
         <div className="mt-1 text-xs text-zinc-500">거래량 {fmtVolume(quote.volume)}</div>

@@ -22,4 +22,25 @@ describe('cached', () => {
   test('캐시 없이 실패하면 throw', async () => {
     await expect(cached('k3', 0, () => Promise.reject(new Error('down')))).rejects.toThrow('down');
   });
+
+  test('동시 캐시 미스는 업스트림을 한 번만 호출한다', async () => {
+    let resolve!: (v: number) => void;
+    const fn = vi.fn(() => new Promise<number>((r) => { resolve = r; }));
+    const both = Promise.all([cached('k4', 1000, fn), cached('k4', 1000, fn)]);
+    resolve(7);
+    const [a, b] = await both;
+    expect(fn).toHaveBeenCalledTimes(1);
+    expect(a.data).toBe(7);
+    expect(b.data).toBe(7);
+  });
+
+  test('동시 요청이 실패해도 다음 요청은 새로 시도한다 (실패한 promise가 남지 않음)', async () => {
+    const fn = vi.fn()
+      .mockRejectedValueOnce(new Error('down'))
+      .mockResolvedValueOnce(9);
+    await expect(cached('k5', 1000, fn)).rejects.toThrow('down');
+    const r = await cached('k5', 1000, fn);
+    expect(r.data).toBe(9);
+    expect(fn).toHaveBeenCalledTimes(2);
+  });
 });
