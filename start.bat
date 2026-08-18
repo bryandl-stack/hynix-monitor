@@ -1,33 +1,32 @@
 @echo off
-chcp 65001 > nul
-title SK하이닉스 모니터
+title SK Hynix Monitor
 
 :: bat 파일이 있는 폴더로 이동 (어디서 실행해도 동작)
 cd /d "%~dp0"
 
 echo.
-echo  ╔══════════════════════════════════════╗
-echo  ║      SK하이닉스 시세 모니터          ║
-echo  ║   KRX · NXT · NASDAQ ADR · Binance  ║
-echo  ╚══════════════════════════════════════╝
+echo  ================================
+echo    SK Hynix Monitor
+echo    KRX / NXT / NASDAQ ADR / Binance
+echo  ================================
 echo.
 
 :: node_modules 없으면 설치
 if not exist "node_modules" (
-    echo [1/2] 패키지 설치 중...
+    echo [1/2] Installing packages...
     call npm install
     if errorlevel 1 (
-        echo [오류] npm install 실패
+        echo [ERROR] npm install failed
         pause
         exit /b 1
     )
     echo.
 )
 
-echo [2/2] 개발 서버 시작 중...
+echo [2/2] Starting dev server...
 echo.
-echo  3초 후 브라우저가 자동으로 열립니다.
-echo  종료하려면 Ctrl+C 를 누르세요.
+echo  Browser will open automatically in 3 seconds.
+echo  Press Ctrl+C to stop the server.
 echo.
 
 :: 3초 뒤 브라우저 자동 오픈 (서버 준비 시간 확보)
