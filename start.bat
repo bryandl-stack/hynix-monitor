@@ -26,9 +26,12 @@ if not exist "node_modules" (
 
 echo [2/2] 개발 서버 시작 중...
 echo.
-echo  브라우저에서 http://localhost:3000 을 열어주세요.
+echo  3초 후 브라우저가 자동으로 열립니다.
 echo  종료하려면 Ctrl+C 를 누르세요.
 echo.
+
+:: 3초 뒤 브라우저 자동 오픈 (서버 준비 시간 확보)
+start "" cmd /c "timeout /t 3 /nobreak > nul && start http://localhost:3000"
 
 call npm run dev
 
