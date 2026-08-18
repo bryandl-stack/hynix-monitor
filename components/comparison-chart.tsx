@@ -11,7 +11,7 @@ import {
   type LineData,
   type MouseEventParams,
   type Time,
-  type UTCTimestamp,
+  type BusinessDay,
 } from 'lightweight-charts';
 import type { HistoryPoint } from '@/lib/history';
 
@@ -31,9 +31,12 @@ function formatPct(v: number): string {
   return `${v > 0 ? '+' : ''}${v.toFixed(2)}%`;
 }
 
-/** lightweight-charts는 우리가 넣은 UTCTimestamp를 그대로 돌려준다 → 날짜 문자열로 되돌린다 */
+/** BusinessDay 객체 → "YYYY-MM-DD" 문자열 */
 function formatChartDate(t: Time): string {
-  return typeof t === 'number' ? new Date(t * 1000).toISOString().slice(0, 10) : String(t);
+  if (typeof t === 'string') return t;
+  if (typeof t === 'number') return new Date(t * 1000).toISOString().slice(0, 10);
+  // BusinessDay: { year, month, day }
+  return `${t.year}-${String(t.month).padStart(2, '0')}-${String(t.day).padStart(2, '0')}`;
 }
 
 interface SeriesConfig {
@@ -68,10 +71,13 @@ const PERIODS = [
 function toLine(history: HistoryPoint[], key: SeriesKey): LineData[] {
   return history
     .filter((p) => p[key] !== null)
-    .map((p) => ({
-      time: (Date.parse(p.date + 'T00:00:00Z') / 1000) as UTCTimestamp,
-      value: p[key] as number,
-    }));
+    .map((p) => {
+      const [year, month, day] = p.date.split('-').map(Number);
+      return {
+        time: { year, month, day } as BusinessDay,
+        value: p[key] as number,
+      };
+    });
 }
 
 export function ComparisonChart({ history }: { history: HistoryPoint[] | null }) {
